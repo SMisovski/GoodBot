@@ -1,6 +1,38 @@
+
+var osuAuth = require("./osu.json");
 var Discord = require("discord.js");
 var auth = require('./auth.json');
 var botInfo = require('./package.json');
+var http = require('http');
+
+var osu ={
+    token: osuAuth.key,
+    //TODO get getUser to return str itself, not have to pass in channel to print
+    getUser(user, channel){
+        var str = '';
+        const https = require("https");
+        const url = "https://osu.ppy.sh/api/get_user?u=" + user + "&k=" + this.token;
+        https.get(url, res => {
+        res.setEncoding("utf8");
+        let body = "";
+        res.on("data", data => {
+            body += data;
+        });
+        res.on("end", () => {
+            body = JSON.parse(body);
+            try{
+                str += "User: " + body[0].username +"\nPP: " + body[0].pp_raw + "\nCountry: " + body[0].country;
+            }catch(err){
+                channel.send("Error: user not found!");
+            }
+            channel.send(str);   
+        });
+        });
+        
+    }
+}
+
+
 
 var bot = new Discord.Client({
     token: auth.token,
@@ -66,6 +98,7 @@ bot.on("ready", () => {
 });
 
 
+
 bot.on("message", (message) => {
   if (botCalled(message)) { 
     var call = message.content.substr(1);
@@ -78,8 +111,11 @@ bot.on("message", (message) => {
         case "r":
             message.reply(roll(args));
             break;
+        case "user":
+            osu.getUser(args[0], message.channel);
+            break;
         default:
-            message.reply("I don't know how to respond to " + args);
+            message.reply("I don't know how to respond to " + args[0]);
             break;
     }
     
