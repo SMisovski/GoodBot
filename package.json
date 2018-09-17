@@ -1,10 +1,12 @@
 {
     "name": "goodbot",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "description": "Chaos causer and moderation tool",
     "main": "bot.js",
     "author": "Stefen M, Toasty #7239",
     "dependencies": {
-        "discord.js": "^11.3.2"
+        "discord.js": "^11.3.2",
+        "ffmpeg-binaries": "^4.0.0",
+        "opusscript": "0.0.6"
     }
 }

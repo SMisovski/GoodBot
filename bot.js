@@ -1,89 +1,147 @@
-
-var osuAuth = require("./osu.json");
 var Discord = require("discord.js");
 var auth = require('./auth.json');
 var botInfo = require('./package.json');
 var http = require('http');
 
-var osu ={
-    token: osuAuth.key,
-    //TODO get getUser to return str itself, not have to pass in channel to print
-    getUser(user, channel){
-        var str = '';
-        const https = require("https");
-        const url = "https://osu.ppy.sh/api/get_user?u=" + user + "&k=" + this.token;
-        https.get(url, res => {
-        res.setEncoding("utf8");
-        let body = "";
-        res.on("data", data => {
-            body += data;
-        });
-        res.on("end", () => {
-            body = JSON.parse(body);
-            try{
-                str += "User: " + body[0].username +"\nRank: #" + body[0].pp_rank + "\nPP: " + body[0].pp_raw + "\nCountry: " + body[0].country;
-            }catch(err){
-                channel.send("Error: user not found!");
-            }
-            channel.send(str);   
-        });
-        });
-    },
-    //todo figure a way to make this return the string instead of printing to channel
-    //will make future use of printing beatmaps much cleaner
-    printBeatmap(beatmapId, channel){
-        var str = '';
-        const https = require("https");
-        const url = "https://osu.ppy.sh/api/get_beatmaps?b=" + beatmapId + "&k=" + this.token;
-        https.get(url, res => {
-        res.setEncoding("utf8");
-        let body = "";
-        res.on("data", data => {
-            body += data;
-        });
-        res.on("end", () => {
-            body = JSON.parse(body);
-            try{
-                str += "```" + body[0].title  + " - " + body[0].artist + " <" + body[0].version +">\n"
-                + Math.round(body[0].difficultyrating*100)/100 + "☆ | "
-                 + body[0].bpm + " bpm | " + body[0].max_combo + "x combo | " + printSeconds(body[0].total_length)
-                  + "\n```" + "https://osu.ppy.sh/b/" + beatmapId;
-            }catch(err){
-                channel.send("Error: beatmap not found");
-            }
-            channel.send(str);   
-        });
-        });
-    },
-    //TODO, mod conversion, accuracy calculation
-    getUserBest(user, channel){
-        var str = '';
-        const https = require("https");
-        const url = "https://osu.ppy.sh/api/get_user_best?u=" + user + "&k=" + this.token + "&limit=1";
-        https.get(url, res => {
-        res.setEncoding("utf8");
-        let body = "";
-        res.on("data", data => {
-            body += data;
-        });
-        res.on("end", () => {
-            body = JSON.parse(body);
-            try{
-                this.printBeatmap(body[0].beatmap_id, channel);
-                str += "rank: **" + body[0].rank + "** | pp: **" + body[0].pp + "** | Mods: " + body[0].enabled_mods + "\n" +
-                body[0].maxcombo +"x | (" + body[0].count300 + ", " + body[0].count100 + ", " + body[0].count50 + ") | " + body[0].countmiss + "x miss";
-                if(body[0].perfect == 1){
-                    str += "\n__***FULL COMBO***__";
-                }
-            }catch(err){
-                channel.send("Error: Top play not found");
-            }
-            channel.send(str);   
-        });
-        });
-    },
+var dictionary = {};
+var warnings = {};
+var config = {
+    //What roles in each guild have administrator rights
+    mod: ["Mod", "Admin", "Administrator", "Moderator"],
+    //what preceeding character you want the bot to be woken with
+    call: '!',
+    //profanity filter word list
+    bantext: 'banlist.txt',
+    //enable or disable the profanity filter with true or false
+    profanityFilter: false,
+    //Warnings before mods get a message
+    warningCount: 9,
+    //Use the osu! api for pulling data
+    osuAPI: false,
+};
 
+var bot = new Discord.Client({
+    token: auth.token,
+    autorun: true,
+});
+
+
+
+var fs = require('fs'),
+readline = require('readline');
+try{
+var lineReader = require('readline').createInterface({
+    input: require('fs').createReadStream(config.bantext)
+  });
+  
+  lineReader.on('line', function (line) {
+    dictionary[line] = true;
+  }); 
+}catch(err){
+    console.log("Word black list file not found");
 }
+
+bot.on("ready", () => {
+    console.log("Launching " + botInfo.name + ' version ' + botInfo.version + ' in ' + bot.guilds.size + ' guild(s)');
+    console.log("Profanity filter: " + config.profanityFilter);
+    console.log("osu! integration: " + config.osuAPI);
+    bot.user.setActivity('Being a GoodBot™');
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    
+});
+
+try{
+    var osuAuth = require("./osu.json");
+}catch(err){
+    console.log("osu! key not found")
+}
+
+if(config.osuAPI){
+    var osu ={
+        token: osuAuth.key,
+        
+        //TODO get getUser to return str itself, not have to pass in channel to print
+        getUser(user, channel){
+            var str = '';
+            const https = require("https");
+            const url = "https://osu.ppy.sh/api/get_user?u=" + user + "&k=" + this.token;
+            https.get(url, res => {
+            res.setEncoding("utf8");
+            let body = "";
+            res.on("data", data => {
+                body += data;
+            });
+            res.on("end", () => {
+                body = JSON.parse(body);
+
+                try{
+                    str += "User: " + body[0].username +"\nRank: #" + body[0].pp_rank + "\nPP: " + body[0].pp_raw + "\nCountry: " + body[0].country;
+                }catch(err){
+                    channel.send("Error: user not found!");
+                }
+                channel.send(str);   
+            });
+            });
+        },
+        //todo figure a way to make this return the string instead of printing to channel
+        //will make future use of printing beatmaps much cleaner
+        printBeatmap(beatmapId, channel){
+            var str = '';
+            const https = require("https");
+            const url = "https://osu.ppy.sh/api/get_beatmaps?b=" + beatmapId + "&k=" + this.token;
+            https.get(url, res => {
+            res.setEncoding("utf8");
+            let body = "";
+            res.on("data", data => {
+                body += data;
+            });
+            res.on("end", () => {
+                body = JSON.parse(body);
+                try{
+                    str += "```" + body[0].title  + " - " + body[0].artist + " <" + body[0].version +">\n"
+                    + Math.round(body[0].difficultyrating*100)/100 + "☆ | "
+                    + body[0].bpm + " bpm | " + body[0].max_combo + "x combo | " + printSeconds(body[0].total_length)
+                    + "\n```" + "https://osu.ppy.sh/b/" + beatmapId;
+                }catch(err){
+                    channel.send("Error: beatmap not found");
+                }
+                channel.send(str);   
+            });
+            });
+        },
+        //TODO, mod conversion, accuracy calculation
+        getUserBest(user, channel){
+            var str = '';
+            const https = require("https");
+            const url = "https://osu.ppy.sh/api/get_user_best?u=" + user + "&k=" + this.token + "&limit=1";
+            https.get(url, res => {
+            res.setEncoding("utf8");
+            let body = "";
+            res.on("data", data => {
+                body += data;
+            });
+            res.on("end", () => {
+                body = JSON.parse(body);
+                try{
+                    this.printBeatmap(body[0].beatmap_id, channel);
+                    str += "rank: **" + body[0].rank + "** | pp: **" + body[0].pp + "** | Mods: " + body[0].enabled_mods + "\n" +
+                    body[0].maxcombo +"x | (" + body[0].count300 + ", " + body[0].count100 + ", " + body[0].count50 + ") | " + body[0].countmiss + "x miss";
+                    if(body[0].perfect == 1){
+                        str += "\n__***FULL COMBO***__";
+                    }
+                }catch(err){
+                    channel.send("Error: Top play not found");
+                }
+                channel.send(str);   
+            });
+            });
+        },
+
+    }
+}
+
+
+
+//truncates numbers
 function pad2(number) {
     return (number < 10 ? '0' : '') + number
 }
@@ -94,13 +152,9 @@ function printSeconds(time){
     return minutes + ":" + seconds;
 }
 
-var bot = new Discord.Client({
-    token: auth.token,
-    autorun: true,
-});
 
 function botCalled(message){
-    if(message.content.startsWith('!')){
+    if(message.content.startsWith(config.call)){
         message.content.substr(1);
         return true;
     }
@@ -151,7 +205,6 @@ function rollDie(sideNumber, quantity, constant){
 function roll(inputStrings){
     var dblock = inputStrings[0].split('d');
     return(rollDie(dblock[1], dblock[0], 0));
-    var pblock = dblock[1].split('+');
 }
 
 function help(channel){
@@ -166,45 +219,129 @@ function commands(channel){
     channel.send(output);
 }
 
-bot.on("ready", () => {
-  console.log("Launching " + botInfo.name + ' version ' + botInfo.version);
-});
+function isMod(member){
+    for(let i = 0; i < config.mod.size; ++i){
+        if(member.roles.some(role=>[config.mod[i]].includes(role.name))) return true;
+    }
+    return false;
+}
 
+function alertMods(guild, user){
+
+    for(let i = 0; i < config.mod.length; ++i){
+        ModName = config.mod[i];
+
+        let modList = guild.members.filter(member => { 
+            return member.roles.find("name", ModName);
+        }).map(member => {
+            return member;
+        })
+        
+        for(let i = 0; i < modList.length; ++i){
+            modList[i].send(user + " has recieved over " + config.warningCount + " warnings. Disciplinary action may be required");
+        }
+    }
+ 
+
+}
+
+
+function profanityFilter(message){
+    let sentence = message.content;
+    sentence = sentence.toLowerCase();
+    var words = sentence.split(' ');
+    for(var i = 0; i < words.length; ++i){
+        if(dictionary[words[i]]){
+            warningMessage(message);
+            return true;
+        }
+    }
+    return false;
+}
+
+function warningMessage(message){
+    if(isNaN(warnings[message.author])){
+         warnings[message.author] = 1;
+    }
+    else{
+        warnings[message.author] += 1;
+    }
+    if(warnings[message.author] >= config.warningCount){
+        alertMods(message.guild, message.author);
+    }
+    message.reply(" unacceptable langauge. This is warning number " + warnings[message.author]);
+    message.delete();
+}
 
 
 bot.on("message", (message) => {
-  if (botCalled(message)) { 
+
+    if(config.profanityFilter){
+        if(profanityFilter(message)) return;
+    }
+
+    if(message.author.bot) return;
+    if (!botCalled(message)) return;
+    
     var call = message.content.substr(1);
     var args = call.split(' ');
     var command = args[0];
     args.splice(0,1);
-    
 
-    switch(command.toLowerCase()){
-        case "help":
-            help(message.channel);
-            break;
-        case "commands":
-            commands(message.channel);
-            break;
-        case "r":
-            message.reply(roll(args));
-            break;
-        case "beatmap":
-            osu.printBeatmap(args[0], message.channel);
-            break;
-        case "user":
-            osu.getUser(args[0], message.channel);
-            break;
-        case "best":
-            osu.getUserBest(args[0], message.channel);
-            break;
-        default:
-            message.reply("I don't know how to respond to " + args[0]);
-            break;
+    command = command.toLocaleLowerCase();
+    if(command === "say"){
+        if(!isMod(message.member)) return;
+        const replyMessage = args.join(" ");
+        message.delete();
+        message.channel.send(replyMessage);
+        return;
+    }
+    else if(command === "commands"){
+        commands(message.channel);
+    }
+    else if(command === "r"){
+        message.reply(roll(args));
+    }
+    else if(command === "beatmap"){
+        if(!config.osuAPI) return;
+        osu.printBeatmap(args[0], message.channel);
+    }
+    else if(command === "user"){
+        if(!config.osuAPI) return;
+        osu.getUser(args[0], message.channel);
+    }
+    else if(command === "best"){
+        if(!config.osuAPI) return;
+        osu.getUserBest(args[0], message.channel);
+    }
+    else if(command === "kick"){
+        if(!isMod(message.member)) return;
+        const target = message.mentions.users.first();
+        if(!target) return;
+        var targetmember = message.guild.member(target);
+        if(targetmember){
+            targetmember.kick("Kicked from the server by " + message.author.tag).then(() => {
+                message.reply("Kicked " + target.tag)}).catch(errorLog => {
+                    message.reply("Unable to kick");
+                    console.error(errorLog);
+            })
+            
+        }
+    }
+    else if(command === "connect"){
+        var targetChannel = message.member.voiceChannel
+        targetChannel.join();
+    }
+    else if(command === "disconnect"){
+        message.member.voiceChannel.leave();
+    }
+    else if(command === "help"){
+        help(message.channel);
+    }
+    else{
+        message.reply("I don't know how to respond to " + command);
     }
     
-  }
 });
 
 bot.login(auth.token);
