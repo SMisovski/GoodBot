@@ -220,8 +220,10 @@ function commands(channel){
 }
 
 function isMod(member){
-    for(let i = 0; i < config.mod.size; ++i){
-        if(member.roles.some(role=>[config.mod[i]].includes(role.name))) return true;
+    for(let i = 0; i < config.mod.length; ++i){
+        if(member.roles.find("name", config.mod[i])){
+            return true;
+        }
     }
     return false;
 }
@@ -273,6 +275,11 @@ function warningMessage(message){
     message.delete();
 }
 
+function deleteLast(message){
+    for(let i = 0; i < message.content; ++i){
+        
+    }
+}
 
 bot.on("message", (message) => {
 
@@ -337,6 +344,26 @@ bot.on("message", (message) => {
     }
     else if(command === "help"){
         help(message.channel);
+    }
+    else if(command === "profon"){
+        if(isMod(message.member)){
+            config.profanityFilter = true;
+            message.reply("profanity filter enabled!");
+        }
+        else{
+            console.log("Profanity filter enabled");
+            message.reply("you must be a moderator to use this command.")
+        }
+    }
+    else if(command === "profoff"){
+        if(isMod(message.member)){
+            config.profanityFilter = false;
+            message.reply("profanity filter disabled!");
+            console.log("Profanity filter disabled");
+        }
+        else{
+            message.reply("you must be a moderator to use this command.")
+        }
     }
     else{
         message.reply("I don't know how to respond to " + command);

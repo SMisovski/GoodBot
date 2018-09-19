@@ -1,10 +1,12 @@
-# GoodBot
+# GoodBot version 1.0.1
 ### Commands
 Current GoodBot command list:
 - !r `x`D`y`, rolls x dice of y sides!
 - !user `username` pulls data of osu! user `username`
 - !best `username` pulls the highest pp score from osu! user `username`
 - !beatmap `beatmapid` will show relevant information about osu! beatmap with beatmap id `beatmapid`
+- !profon (Moderator only) Enables the profanity filter
+- !profoff (Moderator only) Disables the profanity filter
 
 #### Requirements
 Requires NodeJS, Discord.js
@@ -20,14 +22,19 @@ Feel free to adjust the config variable in bot.js to change various options for 
 ```
     //The names of roles that have admin powers
     mod: ["Mod", "Admin", "Administrator", "Moderator"],
+
     //what preceeding character you want the bot to be woken with
     call: '!',
+
     //profanity filter word list file
     bantext: 'banlist.txt',
+
     //enable or disable the profanity filter with true or false
     profanityFilter: false,
+
     //Warnings before mods get a message
     warningCount: 9,
+
     //Enabling or disabling the osu! integration for GoodBot
     osuAPI: true
 ```
