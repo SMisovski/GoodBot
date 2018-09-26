@@ -13,7 +13,7 @@ var config = {
     //profanity filter word list
     bantext: 'banlist.txt',
     //enable or disable the profanity filter with true or false
-    profanityFilter: false,
+    profanityFilter: true,
     //Warnings before mods get a message
     warningCount: 9,
     //Use the osu! api for pulling data
@@ -35,6 +35,15 @@ var lineReader = require('readline').createInterface({
   });
   
   lineReader.on('line', function (line) {
+    if(line.indexOf(" ") >= 0 ){
+        let lineSplit = line.split(" ");
+        if(typeof dictionary[lineSplit[0]] === "object"){
+            dictionary[lineSplit[0]].push(line);
+        }
+        else{
+            dictionary[lineSplit[0]] = new Array(line);
+        }
+    }
     dictionary[line] = true;
   }); 
 }catch(err){
@@ -253,9 +262,18 @@ function profanityFilter(message){
     sentence = sentence.toLowerCase();
     var words = sentence.split(' ');
     for(var i = 0; i < words.length; ++i){
-        if(dictionary[words[i]]){
+        if(dictionary[words[i]] === true){
             warningMessage(message);
             return true;
+        }
+        else if(typeof dictionary[words[i]] === "object"){
+            for(var strings in dictionary[words[i]]){
+                //todo, whooo boy. this is reads _real_ poorly
+                if(message.content.includes(dictionary[words[i]][strings])){
+                    warningMessage(message);
+                    return true;
+                }
+            }
         }
     }
     return false;
@@ -275,11 +293,6 @@ function warningMessage(message){
     message.delete();
 }
 
-function deleteLast(message){
-    for(let i = 0; i < message.content; ++i){
-        
-    }
-}
 
 bot.on("message", (message) => {
 
