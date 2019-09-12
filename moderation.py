@@ -13,3 +13,11 @@ async def warn_member(message):
        if len(warnings) > WARNING_LIMIT:
            await mention.send(content="you've been naughty")
 
+
+async def message_moderators(message):
+    if not message.guild: return
+    member_list = message.guild.members
+    moderator_list = []
+    for member in member_list:
+        if member.administrator is True: moderator_list.append(member)
+        await member.send("User " + message.author.name + " has recieved " + WARNING_LIMIT + " number of warnings")

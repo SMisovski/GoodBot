@@ -8,6 +8,7 @@ import util
 import logging
 import userdata
 import moderation as mod
+import config
 logging.basicConfig(filename="debug.log", level=logging.DEBUG)
 
 client = discord.Client()
@@ -68,4 +69,4 @@ async def on_guild_channel_pins_update(channel, last_pin):
     logging.info("Archived new pinned message " + str(pin_list[0].id))
 
 
-client.run('NDMxMjI2NzY3MzY2MTYwMzg0.DabtXw.AgNB5FQNsiAKG0RGUku0_Urn4iw')
+client.run(config.API_KEY)

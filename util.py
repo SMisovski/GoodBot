@@ -47,8 +47,8 @@ def dice_roller(message):
     return output
 
 def help(message):
-    output = """    !pins (10) shows 5 pinned messages, starting at index 10. Given no index it will return the 5 most recent pins
-    !r yaknow how this works
+    output = """!pins shows the most recent pinned messages
+    !r dice roll! eg. 2d20 + 2 
     !archive mod only, archives all pinned messages in this guild
     !quit mod only, disconnects the bot from discord
     !fridge random fridge quote
