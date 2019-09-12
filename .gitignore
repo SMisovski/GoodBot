@@ -1,2 +1,3 @@
-auth.json
-osu.json
+debug.log
+pythonsqlite.db
+config.py
