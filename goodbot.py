@@ -9,6 +9,7 @@ import logging
 import userdata
 import moderation as mod
 import config
+import osu
 logging.basicConfig(filename="debug.log", level=logging.DEBUG)
 
 client = discord.Client()
@@ -51,6 +52,12 @@ async def on_message(message):
 
     if message.content.startswith(util.WARNING_COMMAND):
         await mod.warn_member(message)
+
+    if message.content.startswith(util.OSU_USER_COMMAND):
+        osu.get_user_data(message)
+
+    if message.content.startswith(util.TOP_PLAY_COMMAND):
+        await message.channel.send(content=osu.get_user_top_plays(osu.get_user_data(message)))
 
     if message.content.startswith(util.FRIDGE_COMMAND):
         channels = message.guild.text_channels

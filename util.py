@@ -12,6 +12,8 @@ QUIT_COMMAND = "!quit"
 ROLL_COMMAND = "!r"
 HELP_COMMAND = "!help"
 WARNING_COMMAND = "!warn"
+TOP_PLAY_COMMAND = "!topplay"
+OSU_USER_COMMAND = "!osuuser"
 
 
 
