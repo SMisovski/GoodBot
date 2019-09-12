@@ -1,5 +1,6 @@
 import sql
 import discord
+import config
 
 WARNING_LIMIT = 5
 
@@ -10,9 +11,16 @@ async def warn_member(message):
     for mention in mention_list:
        sql.insert_warning(message, mention, sql.DB_FILE)
        warnings = sql.return_warnings(mention)
+       warning_messages = []
+       for warning in warnings:
+           warning
        if len(warnings) > WARNING_LIMIT:
            await mention.send(content="you've been naughty")
+           kick_member(mention)
 
+async def kick_member(user):
+    if  config.AUTO_KICK is True:
+        await user.kick()
 
 async def message_moderators(message):
     if not message.guild: return
